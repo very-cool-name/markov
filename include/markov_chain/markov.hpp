@@ -1,3 +1,6 @@
+#ifndef MARKOV_HPP_
+#define MARKOV_HPP_
+
 #include <unordered_map>
 #include <unordered_set>
 #include <memory>
@@ -6,6 +9,10 @@
 #include <istream>
 #include <ostream>
 
+#include "cereal/types/unordered_map.hpp"
+#include "cereal/types/memory.hpp"
+#include "cereal/types/string.hpp"
+
 namespace markov {
   using StrType = std::string;
 
@@ -13,12 +20,22 @@ namespace markov {
     const StrType* word;
     // WordWithFrequency is used in unorder_map
     mutable int frequency;
+
+    template<class Archive>
+    void save(Archive& archive) const {
+      archive(*word, frequency);
+    }
+
+    template<class Archive>
+    void load(Archive& archive, markov::WordWithFrequency& chain) {
+      throw std::runtime_error("Not okay");
+    }
   };
 
   bool operator==(const WordWithFrequency& lhs, const WordWithFrequency& rhs) {
     return *lhs.word == *rhs.word;
   }
-}
+} //namespace markov
 
 namespace std {
   template <> 
@@ -27,10 +44,11 @@ namespace std {
       return hash<markov::StrType>()(*(x.word));
     }
   };
-}
+} //namespace std
 
 namespace markov {
   class WordsFrequency {
+    friend class cereal::access;
    using FrequencyMap = std::unordered_map<WordWithFrequency, std::unique_ptr<WordsFrequency>>;
    public:
     // Iterator is iterator to const StrType*
@@ -66,11 +84,23 @@ namespace markov {
         }
       }
     }
+
+    template<class Archive>
+    void save(Archive& archive) const {
+      archive(freqs_);
+    }
+
+    template<class Archive>
+    void load(Archive& archive) {
+      // archive(inst.freqs_);
+    }
+
    private: 
     FrequencyMap freqs_;
   };
 
   class Chain {
+    friend class cereal::access;
    public:
     Chain(std::istream& in, int depth = 3)
       : depth_(depth)
@@ -99,9 +129,57 @@ namespace markov {
       head_.Show(out, 0);
     }
 
+    template<class Archive>
+    void save(Archive& archive) const {
+      archive(head_);
+    }
+
+    template<class Archive>
+    void load(Archive& archive) {
+      // archive(inst.freqs_);
+    }
+
    private:
     std::unordered_set<StrType> tokens_;
     WordsFrequency head_;
     int depth_;
   };
+} // namespace markov
+
+
+/*
+template<class Archive>
+inline void save(Archive& archive, const markov::Chain& inst) {
+  archive(inst.head_);
 }
+
+template<class Archive>
+inline void save(Archive& archive, const markov::WordsFrequency& inst) {
+  // for (auto& word : inst.freqs_) {
+  archive(inst.freqs_);
+  //}
+}
+
+template<class Archive>
+inline void save(Archive& archive, const markov::WordWithFrequency& chain) {
+  archive(*chain.word, chain.frequency);
+}
+
+template<class Archive>
+inline void load(Archive& archive, markov::Chain& inst) {
+  //archive(inst.head_);
+}
+
+template<class Archive>
+inline void load(Archive& archive, markov::WordsFrequency& inst) {
+  // for (auto& word : inst.freqs_) {
+  //archive(inst.freqs_);
+  //}
+}
+
+template<class Archive>
+inline void load(Archive& archive, markov::WordWithFrequency& chain) {
+  //archive(*chain.word, chain.frequency);
+}*/
+
+#endif // MARKOV_HPP_

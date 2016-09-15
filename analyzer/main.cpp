@@ -1,12 +1,14 @@
-#include "markov.hpp"
-
 #include <sstream>
 #include <iostream>
 #include <fstream>
 
+#include "cereal/archives/json.hpp"
+
+#include "markov_chain/markov.hpp"
+
 int main() {
-  std::string sentence {"The quick brown fox jumps over lazy fox man"};
   std::fstream in("input.txt");
   markov::Chain chain(in);
-  chain.Show(std::cout);
+  cereal::JSONOutputArchive output(std::cout);
+  output(chain);  
 }
