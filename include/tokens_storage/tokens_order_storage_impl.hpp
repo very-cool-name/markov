@@ -115,10 +115,14 @@ namespace markov {
     int freq_sum_;
   };
 
+
+  inline TokensOrderStorage::TokensOrderStorage(int depth)
+    : head_(new WordsFrequency)
+    , depth_(depth) {}
+
   inline
-  std::unique_ptr<TokensOrderStorage>
-  TokensOrderStorage::TokenizeFile(std::istream& in, int depth = 3) {
-    std::unique_ptr<TokensOrderStorage> storage(new TokensOrderStorage(depth));
+  void
+  TokensOrderStorage::TokenizeFile(std::istream& in) {
     std::deque<StrType> tokens;
     std::deque<const StrType*> last;
     bool continue_parse = true;
@@ -148,16 +152,15 @@ namespace markov {
           tokens.push_back(token.substr(start, len));
       }
       while(tokens.size() > 0) {
-        const StrType* token_ptr = &(*storage->tokens_.insert(tokens.front()).first);
+        const StrType* token_ptr = &(*tokens_.insert(tokens.front()).first);
         tokens.pop_front();
         last.push_back(token_ptr);
-        if (last.size() >= storage->depth_) {
-          storage->head_->Load(last.begin(), last.end());
+        if (last.size() >= depth_) {
+          head_->Load(last.begin(), last.end());
           last.pop_front();
         }
       }
     }
-    return storage;
   }
 
   template<class Archive>
@@ -167,6 +170,7 @@ namespace markov {
     std::unique_ptr<TokensOrderStorage> storage(new TokensOrderStorage(0));
     ArchiveAndTokens<Archive> ar(stream, storage->tokens_);
     ar(*storage);
+    return storage;
   }
 
   inline void TokensOrderStorage::Show(std::ostream& out) {
@@ -222,9 +226,6 @@ namespace markov {
     return word;
   }
 
-  inline TokensOrderStorage::TokensOrderStorage(int depth)
-    : head_(new WordsFrequency)
-    , depth_(depth){}
 
   template<class Archive>
   inline void TokensOrderStorage::serialize(Archive& archive) {

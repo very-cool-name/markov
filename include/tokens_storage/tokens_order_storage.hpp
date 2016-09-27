@@ -11,12 +11,14 @@ namespace markov {
 
   class TokensOrderStorage {
    public:
-    static std::unique_ptr<TokensOrderStorage> TokenizeFile(std::istream& in, int depth);
+
+    explicit TokensOrderStorage(int depth = 3);
+    
     template<class Archive>
     static std::unique_ptr<TokensOrderStorage> SerializeFrom(std::istream& stream);
 
+    void TokenizeFile(std::istream& in);
     void Show(std::ostream& out);
-
 
     // Iterator to StrType
     template<class Iterator>
@@ -25,7 +27,6 @@ namespace markov {
    private:
     friend class cereal::access;
 
-    explicit TokensOrderStorage(int depth);
 
     template<class Archive>
     void serialize(Archive& archive);
